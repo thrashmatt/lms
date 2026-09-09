@@ -1,5 +1,40 @@
 <template>
-	<div v-if="lesson.data" class="">
+	<div
+		v-if="accessState === 'locked' && lockedLesson"
+		data-testid="progressive-lesson-locked"
+	>
+		<header
+			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
+		>
+			<router-link
+				:to="{ name: 'CourseDetail', params: { courseName: courseName } }"
+			>
+				<Button variant="ghost">
+					<template #prefix>
+						<span class="lucide-chevron-left size-4" />
+					</template>
+					{{ __('Back to Course') }}
+				</Button>
+			</router-link>
+		</header>
+		<div class="flex min-h-[70vh] items-start justify-center px-5 pt-10">
+			<div class="w-full max-w-xl rounded-md border p-6 text-center shadow-sm">
+				<span
+					class="lucide-lock-keyhole mx-auto mb-3 block size-6 text-ink-gray-5"
+				/>
+				<h1 class="text-xl-semibold text-ink-gray-9">
+					{{ lockedLesson.title }}
+				</h1>
+				<div class="mt-2 text-ink-gray-7">
+					{{ availabilityText(lockedLesson.release_at) }}
+					<p class="mt-1">
+						{{ __('Meanwhile, enjoy the lessons that are already available.') }}
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div v-else-if="accessState === 'allowed' && lesson.data" class="">
 		<header
 			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
 		>
@@ -286,7 +321,7 @@
 		</div>
 	</div>
 	<InlineLessonMenu
-		v-if="lesson.data?.name"
+		v-if="accessState === 'allowed' && lesson.data?.name"
 		v-model="showInlineMenu"
 		:lesson="lesson.data?.name"
 		v-model:notes="notes"
@@ -373,8 +408,12 @@ const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const completedLesson = ref(null)
+const lockedLesson = ref(null)
+const accessState = ref('checking')
 const settingsStore = useSettings()
 let timerInterval = null
+let videoFallbackArmed = false
+let fallbackGeneration = 0
 
 const tabs = ref([])
 
@@ -429,19 +468,84 @@ onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
 	if (collapsedByLesson) sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
+	accessGeneration++
+	lessonAccessOutline.abort()
+	lesson.abort()
 })
 
 const lesson = createResource({
 	url: 'lms.lms.utils.get_lesson',
 	makeParams(values) {
 		return {
-			course: props.courseName,
+			course: values?.course || props.courseName,
 			chapter: values ? values.chapter : props.chapterNumber,
 			lesson: values ? values.lesson : props.lessonNumber,
 		}
 	},
-	auto: true,
+	auto: false,
 })
+
+const lessonAccessOutline = createResource({
+	url: 'lms.lms.utils.get_course_outline',
+	makeParams(values) {
+		return {
+			course: values.course,
+			progress: false,
+		}
+	},
+	auto: false,
+})
+
+let accessGeneration = 0
+
+const availabilityText = (releaseAt) => {
+	const match = releaseAt?.match(/^(\d{4})-(\d{2})-(\d{2})/)
+	if (!match) {
+		return __('This lesson will be released soon.')
+	}
+	return __('This lesson will be released for you on {0}.').format(
+		`${match[3]}/${match[2]}/${match[1]}`
+	)
+}
+
+const loadLessonForRoute = (course, chapter, lessonNumber) => {
+	const generation = ++accessGeneration
+	lessonAccessOutline.abort()
+	lesson.abort()
+	lesson.reset()
+	lockedLesson.value = null
+	accessState.value = 'checking'
+
+	lessonAccessOutline.submit(
+		{ course },
+		{
+			onSuccess(outline) {
+				if (generation !== accessGeneration) return
+				const number = `${chapter}-${lessonNumber}`
+				const outlineLesson = (Array.isArray(outline) ? outline : [])
+					.flatMap((item) => item.lessons || [])
+					.find((item) => item.number === number)
+
+				if (outlineLesson?.locked === 1) {
+					lockedLesson.value = outlineLesson
+					accessState.value = 'locked'
+					return
+				}
+
+				lesson.submit(
+					{ course, chapter, lesson: lessonNumber },
+					{
+						onSuccess() {
+							if (generation === accessGeneration) {
+								accessState.value = 'allowed'
+							}
+						},
+					}
+				)
+			},
+		}
+	)
+}
 
 const setupLesson = (data) => {
 	if (Object.keys(data).length === 0) {
@@ -615,36 +719,31 @@ const switchLesson = (direction) => {
 	})
 }
 
-watch(
-	[() => route.params.chapterNumber, () => route.params.lessonNumber],
-	async (
-		[newChapterNumber, newLessonNumber],
-		[oldChapterNumber, oldLessonNumber]
-	) => {
-		if (newChapterNumber || newLessonNumber) {
-			plyrSources.value = []
-			await nextTick()
-			resetLessonState(newChapterNumber, newLessonNumber)
-			updateNotes()
-			checkIfDiscussionsAllowed()
-			checkQuiz()
-		}
-	}
-)
-
-const resetLessonState = (newChapterNumber, newLessonNumber) => {
+const resetLessonState = (newCourseName, newChapterNumber, newLessonNumber) => {
 	editor.value = null
 	instructorEditor.value = null
 	allowDiscussions.value = false
-	lesson.submit({
-		chapter: newChapterNumber,
-		lesson: newLessonNumber,
-	})
+	loadLessonForRoute(newCourseName, newChapterNumber, newLessonNumber)
 	videoFallbackArmed = false
 	fallbackGeneration++
 	clearInterval(timerInterval)
 	timer.value = 0
 }
+
+watch(
+	[() => props.courseName, () => props.chapterNumber, () => props.lessonNumber],
+	async ([newCourseName, newChapterNumber, newLessonNumber]) => {
+		if (newCourseName && newChapterNumber && newLessonNumber) {
+			plyrSources.value = []
+			resetLessonState(newCourseName, newChapterNumber, newLessonNumber)
+			await nextTick()
+			updateNotes()
+			checkIfDiscussionsAllowed()
+			checkQuiz()
+		}
+	},
+	{ immediate: true }
+)
 
 const trackVideoWatchDuration = () => {
 	if (!lesson.data?.membership) return
@@ -694,6 +793,7 @@ const cleanYouTubeUrl = (url) => {
 watch(
 	() => lesson.data,
 	async (data) => {
+		if (!data || accessState.value !== 'allowed') return
 		setupLesson(data)
 		// Settings drive dwell + enforcement; if they haven't resolved yet
 		// the timer reads undefined and falls back to 30s. Await the
@@ -846,8 +946,6 @@ const updateVideoTime = (video) => {
 	}
 }
 
-let videoFallbackArmed = false
-let fallbackGeneration = 0
 const fallbackToDwellTimer = (reason) => {
 	// The dwell fallback only matters for an enrolled student tracking progress.
 	// Don't surface the "mark as viewed" toast in student view or to

@@ -76,11 +76,13 @@ export interface CourseReviewInfo {
 }
 
 export interface OutlineLesson {
-	name: string
+	name?: string
 	title: string
 	number: string
 	icon?: string
 	is_complete?: boolean
+	locked?: 0 | 1
+	release_at?: string | null
 }
 
 export interface OutlineChapter {

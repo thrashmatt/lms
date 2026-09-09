@@ -69,7 +69,7 @@
 			<Draggable
 				:list="chapter.lessons"
 				:disabled="!allowEdit"
-				item-key="name"
+				:item-key="lessonKey"
 				group="items"
 				@end="(e: DraggableEvent) => emit('move-lesson', e)"
 				:data-chapter="chapter.name"
@@ -83,7 +83,17 @@
 								: ''
 						"
 					>
+						<div v-if="isLocked(lesson)">
+							<div class="flex items-center text-sm leading-5">
+								<span class="lucide-lock-keyhole h-4 w-4 me-2 shrink-0" />
+								<span>{{ lesson.title }}</span>
+							</div>
+							<div class="mt-1 ms-6 text-xs text-ink-gray-6">
+								{{ availabilityText(lesson.release_at) }}
+							</div>
+						</div>
 						<component
+							v-else
 							:is="inlineSelect ? 'div' : 'router-link'"
 							:to="inlineSelect ? undefined : lessonRoute(lesson)"
 							:class="inlineSelect ? 'cursor-pointer' : ''"
@@ -255,6 +265,20 @@ function isActiveLesson(lessonNumber: string): boolean {
 	)
 }
 
+function isLocked(lesson: OutlineLesson): boolean {
+	return lesson.locked === 1
+}
+
+function lessonKey(lesson: OutlineLesson): string {
+	return lesson.name || `lesson-${lesson.number}`
+}
+
+function availabilityText(releaseAt?: string | null): string {
+	const match = releaseAt?.match(/^(\d{4})-(\d{2})-(\d{2})/)
+	if (!match) return __('Available soon')
+	return __('Available from {0}').format(`${match[3]}/${match[2]}/${match[1]}`)
+}
+
 // Admins (editorLinks) deep-link into the in-page editor; everyone else
 // opens the student view.
 function lessonRoute(lesson: OutlineLesson): RouteLocationRaw {
@@ -274,7 +298,7 @@ function lessonRoute(lesson: OutlineLesson): RouteLocationRaw {
 }
 
 function onLessonClick(lesson: OutlineLesson) {
-	if (!props.inlineSelect) return
+	if (!props.inlineSelect || isLocked(lesson)) return
 	emit('select-lesson', {
 		chapterNumber: lesson.number.split('-')[0],
 		lessonNumber: lesson.number.split('-')[1],

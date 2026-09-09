@@ -45,8 +45,26 @@
 					</DisclosureButton>
 					<DisclosurePanel>
 						<ul class="list-none">
-							<li v-for="lesson in chapter.lessons || []" :key="lesson.name">
+							<li
+								v-for="lesson in chapter.lessons || []"
+								:key="lesson.name || `lesson-${lesson.number}`"
+							>
+								<div
+									v-if="lesson.locked === 1"
+									class="flex w-full items-start gap-3 rounded ps-9 pe-3 py-2 text-start text-sm leading-5 text-ink-gray-8"
+								>
+									<LockKeyhole
+										class="lucide-lock-keyhole size-4 stroke-1.5 shrink-0 text-ink-gray-7 mt-0.5"
+									/>
+									<div class="min-w-0 flex-1">
+										<div class="truncate">{{ lesson.title }}</div>
+										<div class="mt-0.5 text-xs text-ink-gray-6">
+											{{ availabilityText(lesson.release_at) }}
+										</div>
+									</div>
+								</div>
 								<component
+									v-else
 									:is="inlineSelect ? 'button' : 'router-link'"
 									:type="inlineSelect ? 'button' : undefined"
 									:to="
@@ -54,13 +72,13 @@
 											? undefined
 											: {
 													name: 'Lesson',
-													params: {
-														courseName,
-														chapterNumber: lesson.number.split('-')[0],
-														lessonNumber: lesson.number.split('-')[1],
-													},
-													query: studentViewQuery,
-											  }
+											params: {
+												courseName,
+												chapterNumber: lesson.number.split('-')[0],
+												lessonNumber: lesson.number.split('-')[1],
+											},
+											query: studentViewQuery,
+									  }
 									"
 									class="flex w-full items-center gap-3 rounded ps-9 pe-3 py-2 text-start text-sm leading-5 text-ink-gray-8 hover:bg-surface-gray-2"
 									:class="[
@@ -174,6 +192,12 @@ watchEffect(() => {
 })
 
 const displayedProgress = computed(() => Math.ceil(props.progress || 0))
+
+function availabilityText(releaseAt) {
+	const match = releaseAt?.match(/^(\d{4})-(\d{2})-(\d{2})/)
+	if (!match) return __('Available soon')
+	return __('Available from {0}').format(`${match[3]}/${match[2]}/${match[1]}`)
+}
 
 function iconFor(icon) {
 	switch (icon) {

@@ -8,7 +8,7 @@ export function findLessonNameByNumber(
 ): string | null {
 	for (const chapter of chapters ?? []) {
 		const lesson = chapter.lessons?.find((l) => l.number === number)
-		if (lesson) return lesson.name
+		if (lesson) return lesson.name ?? null
 	}
 	return null
 }
