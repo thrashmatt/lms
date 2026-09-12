@@ -399,7 +399,7 @@ def get_branding():
 
 
 @frappe.whitelist()
-def update_branding(fields):
+def update_branding(fields: dict | str):
 	"""Update the editable Website Settings branding fields."""
 	if isinstance(fields, str):
 		fields = json.loads(fields)
