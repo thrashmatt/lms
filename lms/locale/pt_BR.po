@@ -788,6 +788,16 @@ msgstr "Avaliação Média"
 msgid "Average Watch Time (mins)"
 msgstr ""
 
+#: frontend/src/components/StudentLessonSidebar.vue:198
+#: frontend/src/components/ChapterRow.vue:278
+msgid "Available soon"
+msgstr "Disponível em breve"
+
+#: frontend/src/components/StudentLessonSidebar.vue:199
+#: frontend/src/components/ChapterRow.vue:279
+msgid "Available from {0}"
+msgstr "Disponível a partir de {0}"
+
 #: frontend/src/pages/PersonaForm.vue:145
 msgid "Award my first certificate"
 msgstr ""
@@ -798,7 +808,7 @@ msgstr "Voltar"
 
 #: frontend/src/pages/Lesson.vue:154 frontend/src/pages/Lesson.vue:193
 msgid "Back to Course"
-msgstr ""
+msgstr "Voltar para a trilha"
 
 #: frontend/src/components/Questionnaire.vue:145
 msgid "Back to previous question"
@@ -1286,7 +1296,7 @@ msgstr ""
 #. Label of the certifications (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Certifications"
-msgstr ""
+msgstr "Certificações"
 
 #: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:10
 msgid "Certified"
@@ -5201,6 +5211,10 @@ msgstr ""
 msgid "Members"
 msgstr "Membros"
 
+#: frontend/src/pages/Lesson.vue:31
+msgid "Meanwhile, enjoy the lessons that are already available."
+msgstr "Enquanto isso, aproveite as aulas que já estão disponíveis."
+
 #. Label of the mentor (Link) field in DocType 'LMS Course Mentor Mapping'
 #. Option for the 'Member Type' (Select) field in DocType 'LMS Enrollment'
 #: lms/lms/doctype/lms_course_mentor_mapping/lms_course_mentor_mapping.json
@@ -8253,6 +8267,14 @@ msgstr ""
 #: lms/lms/widgets/NoPreviewModal.html:16
 msgid "This lesson is not available for preview. Please join the course to access it."
 msgstr ""
+
+#: frontend/src/pages/Lesson.vue:504
+msgid "This lesson will be released soon."
+msgstr "Esta aula será liberada em breve."
+
+#: frontend/src/pages/Lesson.vue:506
+msgid "This lesson will be released for you on {0}."
+msgstr "Esta aula será liberada para você em {0}."
 
 #: frontend/src/components/Settings/EmailAccount/EmailAccountList.vue:103
 msgid "This permanently deletes the email account and cannot be undone."
