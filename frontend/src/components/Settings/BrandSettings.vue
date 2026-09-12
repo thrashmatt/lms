@@ -31,13 +31,8 @@
 						size="md"
 						:aria-label="__('Brand Name')"
 						:placeholder="__('Enter Brand Name')"
-						:modelValue="branding.data.app_name"
-						@input="
-							(e) => {
-								branding.data.app_name = e.target.value
-								isDirty = true
-							}
-						"
+						v-model="branding.data.app_name"
+						@update:modelValue="isDirty = true"
 					/>
 				</div>
 			</div>
