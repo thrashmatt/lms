@@ -546,6 +546,12 @@ const tabsStructure = computed(() => {
 											description: 'Show the Courses link in the sidebar.',
 										},
 										{
+											label: 'Programs',
+											name: 'programs',
+											type: 'checkbox',
+											description: 'Show the Programs link in the sidebar.',
+										},
+										{
 											label: 'Batches',
 											name: 'batches',
 											type: 'checkbox',
@@ -557,6 +563,18 @@ const tabsStructure = computed(() => {
 											type: 'checkbox',
 											description:
 												'Show the Programming Exercises link in the sidebar.',
+										},
+										{
+											label: 'Quizzes',
+											name: 'quizzes',
+											type: 'checkbox',
+											description: 'Show the Quizzes link in the sidebar.',
+										},
+										{
+											label: 'Assignments',
+											name: 'assignments',
+											type: 'checkbox',
+											description: 'Show the Assignments link in the sidebar.',
 										},
 										{
 											label: 'Certifications',

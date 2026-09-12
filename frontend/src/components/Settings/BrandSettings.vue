@@ -133,12 +133,10 @@ const branding = createResource({
 })
 
 const saveSettings = createResource({
-	url: 'frappe.client.set_value',
+	url: 'lms.lms.api.update_branding',
 	makeParams(values) {
 		return {
-			doctype: 'Website Settings',
-			name: 'Website Settings',
-			fieldname: values.fields,
+			fields: values.fields,
 		}
 	},
 })
@@ -156,7 +154,6 @@ const getFieldsToSave = () => {
 		banner_image: imageUrl('banner_image'),
 		favicon: imageUrl('favicon'),
 	}
-	fields.app_logo = fields.banner_image
 	return fields
 }
 
@@ -164,7 +161,8 @@ const update = () => {
 	saveSettings.submit(
 		{ fields: getFieldsToSave() },
 		{
-			onSuccess() {
+			onSuccess(data) {
+				branding.data = data
 				isDirty.value = false
 			},
 		}

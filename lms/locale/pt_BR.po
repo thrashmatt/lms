@@ -1952,7 +1952,7 @@ msgstr ""
 #: lms/lms/report/course_progress_summary/course_progress_summary.py:51
 #: lms/lms/workspace/learning/learning.json
 msgid "Course"
-msgstr ""
+msgstr "Trilha"
 
 #. Name of a DocType
 #. Label of the chapter (Link) field in DocType 'Course Lesson'
@@ -2185,7 +2185,7 @@ msgstr ""
 #: lms/lms/doctype/lms_settings/lms_settings.json
 #: lms/workspace_sidebar/learning.json
 msgid "Courses"
-msgstr ""
+msgstr "Trilhas"
 
 #: lms/lms/web_template/lms_statistics/lms_statistics.html:14
 #: lms/templates/statistics.html:28
@@ -9872,4 +9872,3 @@ msgstr ""
 #: lms/lms/workspace/learning/learning.json
 msgid "{} Published"
 msgstr ""
-

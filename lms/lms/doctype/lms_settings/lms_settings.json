@@ -46,10 +46,13 @@
 		"sidebar_tab",
 		"items_in_sidebar_section",
 		"courses",
+		"programs",
 		"batches",
 		"certified_members",
 		"certifications",
 		"programming_exercises",
+		"quizzes",
+		"assignments",
 		"column_break_exdz",
 		"jobs",
 		"statistics",
@@ -297,6 +300,12 @@
 		},
 		{
 			"default": "1",
+			"fieldname": "programs",
+			"fieldtype": "Check",
+			"label": "Programs"
+		},
+		{
+			"default": "1",
 			"fieldname": "jobs",
 			"fieldtype": "Check",
 			"label": "Jobs"
@@ -430,6 +439,18 @@
 			"fieldname": "programming_exercises",
 			"fieldtype": "Check",
 			"label": "Programming Exercises"
+		},
+		{
+			"default": "1",
+			"fieldname": "quizzes",
+			"fieldtype": "Check",
+			"label": "Quizzes"
+		},
+		{
+			"default": "1",
+			"fieldname": "assignments",
+			"fieldtype": "Check",
+			"label": "Assignments"
 		},
 		{
 			"fieldname": "contact_us_tab",

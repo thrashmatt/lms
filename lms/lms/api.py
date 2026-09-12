@@ -399,6 +399,29 @@ def get_branding():
 
 
 @frappe.whitelist()
+def update_branding(fields):
+	"""Update the editable Website Settings branding fields."""
+	if isinstance(fields, str):
+		fields = json.loads(fields)
+	if not isinstance(fields, dict):
+		frappe.throw(_("Branding fields must be an object."))
+
+	allowed_fields = {"app_name", "banner_image", "favicon"}
+	if set(fields) - allowed_fields:
+		frappe.throw(_("Only branding fields can be updated."))
+
+	settings = frappe.get_single("Website Settings")
+	settings.check_permission("write")
+	settings.update(fields)
+	# Keep the application logo aligned with the logo shown in the sidebar.
+	settings.app_logo = settings.banner_image
+	settings.save()
+	frappe.clear_cache(doctype="Website Settings")
+
+	return get_branding()
+
+
+@frappe.whitelist()
 def get_unsplash_photos(keyword: str = None):
 	if keyword is not None and not isinstance(keyword, str):
 		frappe.throw(_("Keyword must be a string."))
@@ -780,7 +803,10 @@ def get_sidebar_settings():
 	sidebar_items = frappe._dict()
 	items = [
 		"courses",
+		"programs",
 		"batches",
+		"quizzes",
+		"assignments",
 		"certifications",
 		"jobs",
 		"statistics",
@@ -788,7 +814,8 @@ def get_sidebar_settings():
 		"programming_exercises",
 	]
 	for item in items:
-		sidebar_items[item] = lms_settings.get(item)
+		value = lms_settings.get(item)
+		sidebar_items[item] = 1 if value is None else value
 
 	if len(lms_settings.sidebar_items):
 		web_pages = frappe.get_all(

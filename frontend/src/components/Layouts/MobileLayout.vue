@@ -87,6 +87,7 @@ import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
 import * as icons from 'lucide-vue-next'
 import { toggleNotifications } from '@/stores/notifications'
+import { isSidebarItemEnabled } from '@/utils/sidebarSettings'
 
 const { logout, user } = sessionStore()
 let { isLoggedIn } = sessionStore()
@@ -162,11 +163,11 @@ const updateSidebarLinks = () => {
 		const data = sidebarSettings.data
 		if (!data) return
 		filterLinksToShow(data)
-		await addPrograms()
+		if (isSidebarItemEnabled(data, 'programs')) await addPrograms()
 		if (isModerator.value || isInstructor.value) {
-			addQuizzes()
-			addAssignments()
-			addProgrammingExercises()
+			if (isSidebarItemEnabled(data, 'quizzes')) addQuizzes()
+			if (isSidebarItemEnabled(data, 'assignments')) addAssignments()
+			if (isSidebarItemEnabled(data, 'programming_exercises')) addProgrammingExercises()
 		}
 		addOtherLinks()
 	})
