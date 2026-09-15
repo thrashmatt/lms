@@ -2105,6 +2105,7 @@ def get_lesson_creation_details(course: str, chapter: int, lesson: int) -> dict:
 				"name",
 				"title",
 				"include_in_preview",
+				"custom_release_stage",
 				"body",
 				"content",
 				"instructor_notes",

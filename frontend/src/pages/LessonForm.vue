@@ -1,7 +1,7 @@
 <template>
 	<div class="py-10">
 		<div class="mx-10 space-y-6 px-20">
-			<div class="flex items-center justify-between gap-3">
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-3">
 					<Switch v-model="lesson.include_in_preview" @change="markDirty" />
 					<div class="flex items-center gap-1.5">
@@ -21,6 +21,16 @@
 						</Tooltip>
 					</div>
 				</div>
+				<Select
+					v-model="lesson.custom_release_stage"
+					:options="releaseStageOptions"
+					class="w-full sm:max-w-xs"
+					:label="__('Liberação da aula')"
+					:description="
+						__('Define quando esta aula fica disponível em ofertas com liberação progressiva.')
+					"
+					@update:modelValue="() => markDirty()"
+				/>
 			</div>
 
 			<textarea
@@ -101,6 +111,7 @@ import {
 import { convertBodyToBlocks as convertToJSON } from '@/utils/lessonMacros'
 import { hasVideoContent } from '@/utils/video'
 import BlockEditor from '@/components/BlockEditor.vue'
+import Select from '@/components/Controls/Select.vue'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import {
 	useKeyboardShortcuts,
@@ -222,10 +233,17 @@ useKeyboardShortcuts({
 const lesson = reactive({
 	title: '',
 	include_in_preview: false,
+	custom_release_stage: '',
 	body: '',
 	instructor_notes: '',
 	content: '',
 })
+
+const releaseStageOptions = [
+	{ label: 'Não definida', value: '' },
+	{ label: 'Imediata', value: 'immediate' },
+	{ label: 'Após o período de garantia', value: 'after_warranty' },
+]
 
 const lessonHasVideo = computed(() => hasVideoContent(lesson))
 

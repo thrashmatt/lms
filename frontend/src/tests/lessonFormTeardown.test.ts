@@ -52,6 +52,37 @@ vi.mock('frappe-ui', async () => {
 	}
 })
 
+vi.mock('@/components/Controls/Select.vue', async () => {
+	const { defineComponent, h } = await import('vue')
+	return {
+		default: defineComponent({
+			name: 'ReleaseStageSelect',
+			props: {
+				modelValue: { type: String, default: '' },
+				options: { type: Array, default: () => [] },
+			},
+			emits: ['update:modelValue'],
+			setup(props, { emit }) {
+				return () =>
+					h(
+						'select',
+						{
+							value: props.modelValue,
+							onChange: (event: Event) =>
+								emit(
+									'update:modelValue',
+									(event.target as HTMLSelectElement).value
+								),
+						},
+						(props.options as any[]).map((option) =>
+							h('option', { value: option.value }, option.label)
+						)
+					)
+			},
+		}),
+	}
+})
+
 // BlockEditor mock: faithful to the teardown contract — onBeforeUnmount nulls the
 // instance, after which save() returns null (matching the real null guard). save()
 // reads `editorState.saveData[fieldname]` so a test can stage "edited" content.
@@ -180,6 +211,14 @@ async function editEditor(wrapper: VueWrapper, fieldname: string) {
 		.findAllComponents(BlockEditorStub)
 		.find((c) => (c.props('uploadContext') as any)?.fieldname === fieldname)
 	editor!.vm.$emit('change')
+	await flushPromises()
+}
+
+async function setReleaseStage(wrapper: VueWrapper, value: string) {
+	const select = wrapper.findComponent({ name: 'ReleaseStageSelect' })
+	select.vm.$emit('update:modelValue', value)
+	await flushPromises()
+	;(wrapper.vm as any).saveLesson()
 	await flushPromises()
 }
 
@@ -342,6 +381,102 @@ describe('LessonForm teardown autosave', () => {
 		const editLesson = findResource('frappe.client.set_value')
 		expect(editLesson.submit).toHaveBeenCalledTimes(1)
 		expect(editLesson.lastParams.name).toBe(LESSON_NAME)
+	})
+
+	it('loads an existing empty stage as Not defined', async () => {
+		wrapper = await mountLoaded()
+
+		const select = wrapper.findComponent({ name: 'ReleaseStageSelect' })
+		expect(select.props('modelValue')).toBe('')
+		expect(select.props('options')).toEqual([
+			{ label: 'Não definida', value: '' },
+			{ label: 'Imediata', value: 'immediate' },
+			{ label: 'Após o período de garantia', value: 'after_warranty' },
+		])
+	})
+
+	it('loads an existing after-warranty stage', async () => {
+		wrapper = await mountLoaded({ custom_release_stage: 'after_warranty' })
+
+		expect(
+			wrapper.findComponent({ name: 'ReleaseStageSelect' }).props('modelValue')
+		).toBe('after_warranty')
+	})
+
+	it.each([
+		['immediate', 'immediate'],
+		['after_warranty', 'after_warranty'],
+		['empty', ''],
+	])('persists the %s release stage', async (_label, value) => {
+		wrapper = await mountLoaded({ custom_release_stage: '' })
+
+		await setReleaseStage(wrapper, value)
+
+		const editLesson = findResource('frappe.client.set_value')
+		expect(editLesson.lastParams.fieldname.custom_release_stage).toBe(value)
+	})
+
+	it('preserves include_in_preview while saving a release stage', async () => {
+		wrapper = await mountLoaded({ include_in_preview: 1 })
+
+		await setReleaseStage(wrapper, 'immediate')
+
+		const editLesson = findResource('frappe.client.set_value')
+		expect(editLesson.lastParams.fieldname.include_in_preview).toBe(true)
+	})
+
+	it('persists a changed release stage through the real autosave debounce', async () => {
+		vi.useFakeTimers()
+		try {
+			wrapper = await mountLoaded()
+			const select = wrapper.findComponent({ name: 'ReleaseStageSelect' })
+			select.vm.$emit('update:modelValue', 'immediate')
+			await flushPromises()
+
+			const editLesson = findResource('frappe.client.set_value')
+			expect(editLesson.submit).not.toHaveBeenCalled()
+
+			await vi.advanceTimersByTimeAsync(800)
+			await flushPromises()
+
+			expect(editLesson.submit).toHaveBeenCalledTimes(1)
+			expect(editLesson.lastParams.fieldname.custom_release_stage).toBe(
+				'immediate'
+			)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('includes the release stage when creating a new lesson', async () => {
+		wrapper = mount(LessonForm, {
+			props: { courseName: 'C1', chapterNumber: '1', lessonNumber: '1' },
+			global: {
+				config: { globalProperties: { __: (s: string) => s } as any },
+				provide: {
+					$user: {
+						data: {
+							is_moderator: true,
+							is_instructor: true,
+							is_system_manager: false,
+						},
+					},
+				},
+			},
+			attachTo: document.body,
+		})
+		const details = created.list.find(
+			(r) => r._config.url === 'lms.lms.utils.get_lesson_creation_details'
+		)
+		details.data = { lesson: null, chapter: { name: 'CH-1' } }
+		await wrapper.find('textarea.lesson-title').setValue('New lesson')
+		await setReleaseStage(wrapper, 'after_warranty')
+
+		const createLesson = findResource('frappe.client.insert', 'Course Lesson')
+		expect(createLesson.lastParams.doc.title).toBe('New lesson')
+		expect(createLesson.lastParams.doc.custom_release_stage).toBe(
+			'after_warranty'
+		)
 	})
 })
 
